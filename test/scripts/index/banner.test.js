@@ -81,4 +81,47 @@ describe('index.html banner', function () {
         });
 
     });
+
+    describe.skip('check qr-code', function () {
+        var resultData;
+
+        before(function (done) {
+            var nightmare = Nightmare({
+                show: true
+            });
+
+            nightmare
+                .goto('https://now.qq.com')
+                .wait('.qr-code')
+                .scrollTo(100, 0)
+                .wait(2000)
+                .mouseover('.header > .button')
+                .wait(2000)
+                .mousedown('.header > .button').wait(2000)
+                .mouseup('.header > .button').wait(2000)
+                .click('.header > .button')
+                .wait(2000)
+                .screenshot('test.png')
+                .evaluate(function () {
+                    return window.getComputedStyle(
+                        document.querySelector('#root .qr-code'), null).display;
+                })
+                .end()
+                .then(function (result) {
+                    console.log(result);
+                    resultData = result;
+                    done();
+                })
+                .catch(function (error) {
+                    console.error('failed:', error);
+                    done();
+                });
+        });
+
+        it('should display qr-code when mouseover', function () {
+            expect(resultData).to.equal('block');
+        });
+
+    });
+
 });

@@ -1,5 +1,15 @@
 const Nightmare = require('nightmare');
-var nightmare = Nightmare({ show: true });
+var nightmare = Nightmare({ show: false });
+
+var unkownArr = [],
+    imgJpegArr = [],
+    imgPngArr = [],
+    imgWebpArr = [],
+    jsArr = [],
+    htmlArr = [],
+    xhrArr = [],
+    reportArr = [],
+    otherTypeArr = [];
 
 nightmare.on('console', function (type, msg) {
     console[type](msg);
@@ -30,7 +40,57 @@ nightmare.on('did-get-response-details',
          headers Object
          resourceType String
          */
-        console.log(resourceType, headers['content-length'], originalURL);
+        console.log(resourceType, headers['content-type'], headers['content-length'], originalURL);
+        var item = {
+            resourceType: resourceType,
+            headers: headers,
+            contentType: headers['content-type'] && headers['content-type'][0] || '',
+            contentLength: parseInt(headers['content-length'] || 0),
+            originalURL: originalURL
+        };
+
+        if (!item.contentType) {
+            if (isReportType(item)) {
+                reportArr.push(item);
+            } else {
+                unkownArr.push(item);
+            }
+        } else {
+            switch (item.contentType) {
+                case 'image/jpeg':
+                    imgJpegArr.push(item);
+                    break;
+
+                case 'image/png':
+                    imgPngArr.push(item);
+                    break;
+
+                case 'image/webp':
+                    imgWebpArr.push(item);
+                    break;
+
+                // js文件
+                case 'application/x-javascript':
+                    jsArr.push(item);
+                    break;
+
+                // html
+                case 'text/html; charset=utf-8':
+                    htmlArr.push(item);
+                    break;
+
+                default:
+                    if (item.resourceType === 'xhr') {
+                        xhrArr.push(item);
+                    } else if (isReportType(item)) {
+                        reportArr.push(item);
+                    } else {
+                        otherTypeArr.push(item);
+                    }
+
+                    break;
+            }
+        }
     });
 
 // mainFrame本身（即html文件）加载完成即触发，在did-frame-finish-load之前
@@ -47,7 +107,37 @@ nightmare.on('did-frame-finish-load', function (event, isMainFrame) {
 // 页面加载完成时触发，相当于 onload，只触发一次
 nightmare.on('did-finish-load', function () {
     console.log('[did-finish-load]');
+
+    // 资源加载完成之后再进行校验
+    showInfo(htmlArr, 'html');
+    showInfo(jsArr, 'js');
+    showInfo(imgJpegArr, 'jpg');
+    showInfo(imgPngArr, 'png');
+    showInfo(imgWebpArr, 'webp');
+    showInfo(xhrArr, 'xhr');
+    showInfo(otherTypeArr, 'other');
+    showInfo(unkownArr, 'unknown');
 });
+
+function isReportType(item) {
+    return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\/|/i);
+}
+
+function showInfo(arr, tag) {
+    if (!arr || !arr.length) {
+        return;
+    }
+
+    console.log('\n====' + tag + '====', arr.length);
+
+    arr.sort(function (a, b) {
+        return b.contentLength - a.contentLength;
+    });
+
+    arr.forEach(function (item) {
+        console.log(item.originalURL, item.contentLength, (item.contentLength / 1024).toFixed(2) + 'kb');
+    });
+}
 
 // 页面停止加载时触发，只触发一次，在 did-finish-load 之后
 nightmare.on('did-stop-loading', function () {

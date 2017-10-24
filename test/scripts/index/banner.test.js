@@ -82,7 +82,7 @@ describe('index.html banner', function () {
 
     });
 
-    describe.skip('check qr-code', function () {
+    describe('check qr-code', function () {
         var resultData;
 
         before(function (done) {
@@ -94,21 +94,15 @@ describe('index.html banner', function () {
                 .goto('https://now.qq.com')
                 .wait('.qr-code')
                 .scrollTo(100, 0)
-                .wait(2000)
                 .mouseover('.header > .button')
                 .wait(2000)
-                .mousedown('.header > .button').wait(2000)
-                .mouseup('.header > .button').wait(2000)
-                .click('.header > .button')
-                .wait(2000)
-                .screenshot('test.png')
                 .evaluate(function () {
                     return window.getComputedStyle(
                         document.querySelector('#root .qr-code'), null).display;
                 })
                 .end()
                 .then(function (result) {
-                    console.log(result);
+                    // console.log(result);
                     resultData = result;
                     done();
                 })

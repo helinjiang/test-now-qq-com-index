@@ -1,16 +1,14 @@
 const Nightmare = require('nightmare');
 const expect = require('chai').expect;
 
-describe('index.html common check', function () {
+describe('官网PC端首页：常规检查', function () {
     this.timeout(30000);
 
-    describe('check window local', function () {
+    describe('检查页面是否为直出', function () {
         var windowLocal;
 
         before(function (done) {
-            var nightmare = Nightmare();
-
-            nightmare
+            Nightmare()
                 .goto('https://now.qq.com')
                 .evaluate(function () {
                     return window;
@@ -26,20 +24,10 @@ describe('index.html common check', function () {
                 });
         });
 
-        // window 对象必须是一个对象
-        it('window should be object', function () {
-            expect(windowLocal).to.be.an('object');
-        });
-
         // window.__initialState 必须要存在且包含特定的reducer
-        it('window.__initialState should be object and have some keys',
+        it('window.__initialState 必须要存在且包含特定的reducer',
             function () {
-                expect(windowLocal.__initialState)
-                    .to
-                    .have
-                    .keys('deviceInfo', 'mainInfo', 'networkInfo', 'newsInfo',
-                        'playerInfo', 'recommendInfo', 'videoAnchorInfo',
-                        'visibilityInfo');
+                expect(windowLocal.__initialState).to.have.keys('deviceInfo', 'mainInfo', 'networkInfo', 'newsInfo', 'playerInfo', 'recommendInfo', 'videoAnchorInfo', 'visibilityInfo');
             });
 
     });

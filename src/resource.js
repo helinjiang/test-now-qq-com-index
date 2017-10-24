@@ -1,5 +1,5 @@
 const Nightmare = require('nightmare');
-var nightmare = Nightmare({ show: false });
+var nightmare = Nightmare({show: false});
 
 var unkownArr = [],
     imgJpegArr = [],
@@ -26,8 +26,7 @@ nightmare.on('did-start-loading', function () {
 
 // 资源加载的情况，会触发多次
 nightmare.on('did-get-response-details',
-    function (event, status, newURL, originalURL, httpResponseCode,
-              requestMethod, referrer, headers, resourceType) {
+    function (event, status, newURL, originalURL, httpResponseCode, requestMethod, referrer, headers, resourceType) {
         // console.log('\n');
         /**
          event Event
@@ -146,9 +145,10 @@ nightmare.on('did-stop-loading', function () {
 });
 
 // 重定向时触发，例如可以构造一个404才测试
-nightmare.on('did-get-redirect-request', function (event, oldURL, newURL, isMainFrame, httpResponseCode, requestMethod, referrer, headers) {
-    console.log('[did-get-redirect-request]', oldURL, newURL, isMainFrame);
-});
+nightmare.on('did-get-redirect-request',
+    function (event, oldURL, newURL, isMainFrame, httpResponseCode, requestMethod, referrer, headers) {
+        console.log('[did-get-redirect-request]', oldURL, newURL, isMainFrame);
+    });
 
 // mp4播放
 nightmare.on('media-started-playing', function () {
@@ -159,18 +159,20 @@ nightmare.on('media-started-playing', function () {
 
 nightmare
     .goto('https://now.qq.com/index.html')
-    .wait('.display-show-pgc')
-    .evaluate(function () {
-        var containerDom = document.querySelector('#root .display-show-pgc');
-        if (!containerDom) {
-            return null;
-        }
-
-        var result = {};
-
-        result.title = containerDom.querySelector('.display-show-title .section-title').innerHTML;
-
-        return result;
+    .wait('#root')
+    .evaluate(function (done) {
+        setTimeout(() => done(null, 'hello'), 3000);
+        // return 'world';
+        // var containerDom = document.querySelector('#root .display-show-pgc');
+        // if (!containerDom) {
+        //     return null;
+        // }
+        //
+        // var result = {};
+        //
+        // result.title = containerDom.querySelector('.display-show-title .section-title').innerHTML;
+        //
+        // return result;
     })
     .end()
     .then(function (result) {

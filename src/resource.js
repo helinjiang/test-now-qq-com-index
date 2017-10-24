@@ -115,12 +115,13 @@ nightmare.on('did-finish-load', function () {
     showInfo(imgPngArr, 'png');
     showInfo(imgWebpArr, 'webp');
     showInfo(xhrArr, 'xhr');
+    showInfo(reportArr, 'report');
     showInfo(otherTypeArr, 'other');
     showInfo(unkownArr, 'unknown');
 });
 
 function isReportType(item) {
-    return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\/|/i);
+    return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\//i);
 }
 
 function showInfo(arr, tag) {

@@ -1,7 +1,7 @@
 const Nightmare = require('nightmare');
 const expect = require('chai').expect;
 
-describe('官网PC端首页：检查 pgc 模块（NOW！总会有人关注你）', function () {
+describe('官网PC端首页：检查 pgc 模块', function () {
     this.timeout(30000);
 
     describe('检查DOM元素及基本信息', function () {

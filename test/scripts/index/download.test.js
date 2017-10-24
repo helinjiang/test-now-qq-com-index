@@ -1,7 +1,7 @@
 const Nightmare = require('nightmare');
 const expect = require('chai').expect;
 
-describe('官网PC端首页：检查 poster 模块', function () {
+describe('官网PC端首页：检查 download 模块', function () {
     this.timeout(30000);
 
     describe('检查DOM元素及基本信息', function () {
@@ -10,9 +10,9 @@ describe('官网PC端首页：检查 poster 模块', function () {
         before(function (done) {
             Nightmare()
                 .goto('https://now.qq.com')
-                .wait('.display-show-poster')
+                .wait('.display-show-download')
                 .evaluate(function () {
-                    var containerDom = document.querySelector('#root .display-show-poster');
+                    var containerDom = document.querySelector('#root .display-show-download');
                     if (!containerDom) {
                         return null;
                     }
@@ -20,14 +20,13 @@ describe('官网PC端首页：检查 poster 模块', function () {
                     var result = {};
 
                     result.title = containerDom.querySelector('.display-show-title .section-title').innerHTML;
-                    result.isExistPersion = !!containerDom.querySelector('.poster-wrap .poster .person');
-                    result.isExistBullet = !!containerDom.querySelector('.poster-wrap .poster .bullet');
+                    result.isExistDownloadImg = !!containerDom.querySelectorAll('.download-bg');
 
                     return result;
                 })
                 .end()
                 .then(function (result) {
-                    // { isExistPersion: true, isExistPoster: true, title: 'NOW！直播你的生活' }
+                    // { isExistDownloadImg: true, title: 'NOW！邀您体验全民直播时代' }
                     // console.log(result);
                     resultData = result;
                     done();
@@ -38,16 +37,12 @@ describe('官网PC端首页：检查 poster 模块', function () {
                 });
         });
 
-        it('标题为：NOW！直播你的生活', function () {
-            expect(resultData.title).to.equal('NOW！直播你的生活');
+        it('标题为：NOW！邀您体验全民直播时代', function () {
+            expect(resultData.title).to.equal('NOW！邀您体验全民直播时代');
         });
 
-        it('人物大图存在', function () {
-            expect(resultData.isExistPersion).to.be.true;
-        });
-
-        it('弹幕动画存在', function () {
-            expect(resultData.isExistBullet).to.be.true;
+        it('下载大图存在', function () {
+            expect(resultData.isExistDownloadImg).to.be.true;
         });
 
     });

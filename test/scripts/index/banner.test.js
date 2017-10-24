@@ -1,18 +1,67 @@
 const Nightmare = require('nightmare');
 const expect = require('chai').expect;
 
-describe('index.html banner', function () {
+describe('官网PC端首页：检查 banner 模块', function () {
     this.timeout(30000);
 
-    describe('check nav menu', function () {
+    describe('检查DOM元素及基本信息', function () {
         var resultData;
 
         before(function (done) {
-            var nightmare = Nightmare({
-                show: true
-            });
+            Nightmare()
+                .goto('https://now.qq.com')
+                .wait('.display-show-banner')
+                .evaluate(function () {
+                    var containerDom = document.querySelector('#root .display-show-banner');
+                    if (!containerDom) {
+                        return null;
+                    }
 
-            nightmare
+                    var result = {};
+
+                    result.isExistTitle = !!containerDom.querySelector('.header .title');
+                    result.isExistQrCode = !!containerDom.querySelector('.header .button');
+                    result.isExistBg = !!containerDom.querySelector('.bg-wrap');
+                    result.isExistVideo = !!containerDom.querySelector('.bg-wrap .video-wrap video');
+
+                    return result;
+                })
+                .end()
+                .then(function (result) {
+                    // {"isExistTitle":true,"isExistQrCode":true,"isExistBg":true,"isExistVideo":true}
+                    // console.log(result);
+                    resultData = result;
+                    done();
+                })
+                .catch(function (error) {
+                    console.error('failed:', error);
+                    done();
+                });
+        });
+
+        it('存在导航栏', function () {
+            expect(resultData.isExistTitle).to.be.true;
+        });
+
+        it('存在二维码', function () {
+            expect(resultData.isExistQrCode).to.be.true;
+        });
+
+        it('存在背景图', function () {
+            expect(resultData.isExistBg).to.be.true;
+        });
+
+        it('存在视频', function () {
+            expect(resultData.isExistVideo).to.be.true;
+        });
+
+    });
+
+    describe('检查菜单导航栏', function () {
+        var resultData;
+
+        before(function (done) {
+            Nightmare()
                 .goto('https://now.qq.com')
                 .wait('.display-show-banner')
                 .evaluate(function () {
@@ -44,11 +93,11 @@ describe('index.html banner', function () {
                 });
         });
 
-        it('resultData should be  array and have 4 element', function () {
+        it('导航栏有四个导航地址', function () {
             expect(resultData).to.be.an('array').that.have.lengthOf(4);
         });
 
-        it('first element should be index.html and is active', function () {
+        it('第一个菜单为：首页，且为激活状态', function () {
             expect(resultData[0]).to.eql({
                 className: 'active',
                 name: '首页',
@@ -56,7 +105,7 @@ describe('index.html banner', function () {
             });
         });
 
-        it('second element should be news.html', function () {
+        it('第二个菜单为：最新动态', function () {
             expect(resultData[1]).to.eql({
                 className: '',
                 name: '最新动态',
@@ -64,7 +113,7 @@ describe('index.html banner', function () {
             });
         });
 
-        it('third element should be operation system', function () {
+        it('第三个菜单为：机构入驻', function () {
             expect(resultData[2]).to.eql({
                 className: '',
                 name: '机构入驻',
@@ -72,7 +121,7 @@ describe('index.html banner', function () {
             });
         });
 
-        it('fourth element should be contact.html', function () {
+        it('第四个菜单为：联系我们', function () {
             expect(resultData[3]).to.eql({
                 className: '',
                 name: '联系我们',
@@ -82,20 +131,15 @@ describe('index.html banner', function () {
 
     });
 
-    describe('check qr-code', function () {
+    describe('检查下载二维码', function () {
         var resultData;
 
         before(function (done) {
-            var nightmare = Nightmare({
-                show: true
-            });
-
-            nightmare
+            Nightmare()
                 .goto('https://now.qq.com')
                 .wait('.qr-code')
                 .scrollTo(100, 0)
                 .mouseover('.header > .button')
-                .wait(2000)
                 .evaluate(function () {
                     return window.getComputedStyle(
                         document.querySelector('#root .qr-code'), null).display;
@@ -112,7 +156,7 @@ describe('index.html banner', function () {
                 });
         });
 
-        it('should display qr-code when mouseover', function () {
+        it('鼠标移动到按钮上时出现二维码', function () {
             expect(resultData).to.equal('block');
         });
 

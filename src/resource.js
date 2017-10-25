@@ -1,5 +1,5 @@
 const Nightmare = require('nightmare');
-var nightmare = Nightmare({show: false});
+var nightmare = Nightmare({ show: false });
 
 var unkownArr = [],
     imgJpegArr = [],
@@ -10,6 +10,10 @@ var unkownArr = [],
     xhrArr = [],
     reportArr = [],
     otherTypeArr = [];
+
+var checkData = {
+    isLoaded: false
+};
 
 nightmare.on('console', function (type, msg) {
     console[type](msg);
@@ -90,6 +94,12 @@ nightmare.on('did-get-response-details',
                     break;
             }
         }
+
+        // 检查下是否已经加载完成，如果不认为控制的话，可以在 did-finish-load 事件中设置
+        if (checkIfLoaded(item)) {
+            console.log('000000000000000 isLoaded');
+            checkData.isLoaded = true;
+        }
     });
 
 // mainFrame本身（即html文件）加载完成即触发，在did-frame-finish-load之前
@@ -108,19 +118,14 @@ nightmare.on('did-finish-load', function () {
     console.log('[did-finish-load]');
 
     // 资源加载完成之后再进行校验
-    showInfo(htmlArr, 'html');
-    showInfo(jsArr, 'js');
-    showInfo(imgJpegArr, 'jpg');
-    showInfo(imgPngArr, 'png');
-    showInfo(imgWebpArr, 'webp');
-    showInfo(xhrArr, 'xhr');
-    showInfo(reportArr, 'report');
-    showInfo(otherTypeArr, 'other');
-    showInfo(unkownArr, 'unknown');
 });
 
 function isReportType(item) {
     return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\//i);
+}
+
+function checkIfLoaded(item) {
+    return !!item.originalURL.match(/table_id=personal_live_base/i);
 }
 
 function showInfo(arr, tag) {
@@ -160,24 +165,22 @@ nightmare.on('media-started-playing', function () {
 nightmare
     .goto('https://now.qq.com/index.html')
     .wait('#root')
-    .evaluate(function (done) {
-        setTimeout(() => done(null, 'hello'), 3000);
-        // return 'world';
-        // var containerDom = document.querySelector('#root .display-show-pgc');
-        // if (!containerDom) {
-        //     return null;
-        // }
-        //
-        // var result = {};
-        //
-        // result.title = containerDom.querySelector('.display-show-title .section-title').innerHTML;
-        //
-        // return result;
-    })
+    .wait(function (checkData) {
+        return checkData.isLoaded;
+    }, checkData)
     .end()
     .then(function (result) {
-        // { isExistPersion: true, isExistPoster: true, title: 'NOW！直播你的生活' }
         console.log(result);
+
+        showInfo(htmlArr, 'html');
+        showInfo(jsArr, 'js');
+        showInfo(imgJpegArr, 'jpg');
+        showInfo(imgPngArr, 'png');
+        showInfo(imgWebpArr, 'webp');
+        showInfo(xhrArr, 'xhr');
+        showInfo(reportArr, 'report');
+        showInfo(otherTypeArr, 'other');
+        showInfo(unkownArr, 'unknown');
     })
     .catch(function (error) {
         console.error('failed:', error);

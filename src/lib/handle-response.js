@@ -134,11 +134,10 @@ class HandleResponse {
     getCheckReportQuality() {
         var errResult = [];
 
+        // 有可能会分多次请求来上报，即type=RES_TYPE.REPORT_QUALITY会有多个，需要先合并
         var allCheckResult = [];
-
-        // 必须要有5个上报
-        // 有可能会分多次请求来上报，即type=RES_TYPE.REPORT_QUALITY会有多个
         var reportQualityList = this.allList.filter(item => (item.type === RES_TYPE.REPORT_QUALITY));
+
         reportQualityList.forEach((item) => {
             var originalURL = item.originalURL;
 

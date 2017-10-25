@@ -82,8 +82,13 @@ nightmare
     .then(function () {
         // 打印加载情况
         handleResponse.toString();
-        // console.log(handleResponse.getCheckReportQuality());
-        // console.log(handleResponse.getCheckReportNowH5());
+        console.log(handleResponse.getCheckReportQuality());
+        console.log(handleResponse.getCheckReportNowH5([{
+            opername: 'now_mob',
+            module: 'download_page',
+            description: '页面曝光',
+            action: 'view'
+        }]));
     })
     .catch(function (error) {
         console.error('failed:', error);

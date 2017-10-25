@@ -81,55 +81,58 @@ class HandleResponse {
         }
     }
 
-    // getCheckReportNowH5() {
-    //     // TODO 此处可能会有多次请求
-    //     var urlStr;
-    //     for (var i = 0; i < this.reportArr.length; i++) {
-    //         if (this.reportArr[i].originalURL.match(/table_id=personal_live_base/i)) {
-    //             urlStr = this.reportArr[i].originalURL;
-    //             break;
-    //         }
-    //     }
-    //
-    //     if (!urlStr) {
-    //         return null;
-    //     }
-    //
-    //     var params = util.getUrlQuery(urlStr);
-    //     var checkResult = ivReportChecker.tdbank.getCheckNowH5Result(params, null, {
-    //         reportItemList: [{
-    //             opername: 'now_mob',
-    //             module: 'download_page',
-    //             description: '页面曝光',
-    //             action: 'view'
-    //         }]
-    //     });
-    //
-    //     if (checkResult.retCode !== 0) {
-    //         return null;
-    //     }
-    //
-    //     var arr = [];
-    //
-    //     checkResult.result.forEach((checkMap) => {
-    //         let fieldList = Object.keys(checkMap);
-    //
-    //         // 这种判断方式不是最佳的，应该要预留一个方法出来
-    //         if (checkMap.action.value === checkMap.action.description) {
-    //             arr.push('未匹配的上报检查');
-    //             return;
-    //         }
-    //
-    //         fieldList.forEach((field) => {
-    //             let item = checkMap[field];
-    //             if (!item.isValid) {
-    //                 arr.push(`【${this.name}】【${checkMap.action.value}-${checkMap.action.description}】字段${item.field}校验失败（上报值为：${item.value}），失败原因： ${item.description}`);
-    //             }
-    //         });
-    //     });
-    //
-    //     return arr;
-    // }
+    getCheckReportNowH5(reportItemList = []) {
+        var errResult = [];
+
+        // 有可能会分多次请求来上报，即type=RES_TYPE.REPORT_NOW_H5会有多个，需要先合并
+        var allCheckResult = [];
+        var reportNowH5List = this.allList.filter(item => (item.type === RES_TYPE.REPORT_NOW_H5));
+
+        reportNowH5List.forEach((item) => {
+            var originalURL = item.originalURL;
+
+            // 获取query参数
+            var params = util.getUrlQuery(originalURL);
+
+            // 获取校验结果
+            var checkResult = ivReportChecker.tdbank.getCheckNowH5Result(params, null, {
+                reportItemList: reportItemList
+            });
+
+            if (checkResult.retCode !== 0) {
+                // 本次校验失败
+                errResult.push(`【${item.type}】校验失败！retCode=${checkResult.retCode}，originalURL=${originalURL}`);
+            } else {
+                // 本次校验成功，将结果进行合并，以便后续校验
+                allCheckResult = allCheckResult.concat(checkResult.result);
+            }
+        });
+
+        // 校验上报点个数是否为1
+        if (allCheckResult.length !== 1) {
+            errResult.push(`业务上报的上报点不正确，应该为1个上报点，实际只有${allCheckResult.length}个`);
+        }
+
+        // 校验各个上报点的各个字段是否正常
+        allCheckResult.forEach((checkMap) => {
+            let fieldList = Object.keys(checkMap);
+
+            // 这种判断方式不是最佳的，应该要预留一个方法出来
+            if (checkMap.action.value === checkMap.action.description) {
+                errResult.push('未匹配的上报检查');
+                return;
+            }
+
+            fieldList.forEach((field) => {
+                let item = checkMap[field];
+                if (!item.isValid) {
+                    errResult.push(`【${this.name}】【${checkMap.action.value}-${checkMap.action.description}】字段${item.field}校验失败（上报值为：${item.value}），失败原因： ${item.description}`);
+                }
+            });
+        });
+
+        return errResult;
+    }
 
     getCheckReportQuality() {
         var errResult = [];
@@ -158,7 +161,7 @@ class HandleResponse {
 
         // 校验上报点个数是否为5
         if (allCheckResult.length !== 5) {
-            errResult.push(`质量上报不全，应该为5个上报点，实际只有${allCheckResult.length}个`);
+            errResult.push(`质量上报的上报点不正确，应该为5个上报点，实际只有${allCheckResult.length}个`);
         }
 
         // 校验各个上报点的各个字段是否正常

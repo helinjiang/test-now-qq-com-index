@@ -60,7 +60,7 @@ describe('官网PC端首页：常规检查', function () {
                 .end()
                 .then(function () {
                     // 打印加载情况
-                    handleResponse.print();
+                    // handleResponse.print();
                     done();
                 })
                 .catch(function (error) {

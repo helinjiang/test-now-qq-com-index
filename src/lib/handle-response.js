@@ -71,6 +71,56 @@ class HandleResponse {
         this.isLoaded = true;
     }
 
+    getCheckReportNowH5() {
+        // TODO 此处可能会有多次请求
+        var urlStr;
+        for (var i = 0; i < this.reportArr.length; i++) {
+            if (this.reportArr[i].originalURL.match(/table_id=personal_live_base/i)) {
+                urlStr = this.reportArr[i].originalURL;
+                break;
+            }
+        }
+
+        if (!urlStr) {
+            return null;
+        }
+
+        var params = util.getUrlQuery(urlStr);
+        var checkResult = ivReportChecker.tdbank.getCheckNowH5Result(params, null, {
+            reportItemList: [{
+                opername: 'now_mob',
+                module: 'download_page',
+                description: '页面曝光',
+                action: 'view'
+            }]
+        });
+
+        if (checkResult.retCode !== 0) {
+            return null;
+        }
+
+        var arr = [];
+
+        checkResult.result.forEach((checkMap) => {
+            let fieldList = Object.keys(checkMap);
+
+            // 这种判断方式不是最佳的，应该要预留一个方法出来
+            if (checkMap.action.value === checkMap.action.description) {
+                arr.push('未匹配的上报检查');
+                return;
+            }
+
+            fieldList.forEach((field) => {
+                let item = checkMap[field];
+                if (!item.isValid) {
+                    arr.push(`【${this.name}】【${checkMap.action.value}-${checkMap.action.description}】字段${item.field}校验失败（上报值为：${item.value}），失败原因： ${item.description}`);
+                }
+            });
+        });
+
+        return arr;
+    }
+
     getCheckReportQuality() {
         // TODO 此处可能会有多次请求
         var urlStr;

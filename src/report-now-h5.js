@@ -5,7 +5,17 @@ const REPORT_STR = 'https://report.url.cn/cgi-bin/tdbank?table_id=personal_live_
 
 var params = util.getUrlQuery(REPORT_STR);
 
-var checkMap = ivReportChecker.tdbank.getCheckNowH5Result(params);
+let tdbankConfig = new ivReportChecker.tdbank.TdbankConfig('now.qq.com/qq/market/index.html', 'QQ 公众号-推广页', {
+    opername: 'now_mob',
+    module: 'download_page'
+});
+
+tdbankConfig.addReportItem({
+    description: '页面曝光',
+    action: 'view'
+});
+
+var checkMap = ivReportChecker.tdbank.getCheckNowH5Result(params, null, { reportItemList: tdbankConfig.reportItemList });
 
 // console.log(checkMap);
 console.log(JSON.stringify(checkMap));

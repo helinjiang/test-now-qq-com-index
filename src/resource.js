@@ -1,18 +1,19 @@
 const Nightmare = require('nightmare');
+
 var nightmare = Nightmare({ show: false });
 
-var unkownArr = [],
-    imgJpegArr = [],
-    imgPngArr = [],
-    imgWebpArr = [],
-    jsArr = [],
-    htmlArr = [],
-    xhrArr = [],
-    reportArr = [],
-    otherTypeArr = [];
-
-var checkData = {
-    isLoaded: false
+// 所有加载的数据
+var loadData = {
+    isLoaded: false,
+    unkownArr: [],
+    imgJpegArr: [],
+    imgPngArr: [],
+    imgWebpArr: [],
+    jsArr: [],
+    htmlArr: [],
+    xhrArr: [],
+    reportArr: [],
+    otherTypeArr: []
 };
 
 nightmare.on('console', function (type, msg) {
@@ -31,7 +32,6 @@ nightmare.on('did-start-loading', function () {
 // 资源加载的情况，会触发多次
 nightmare.on('did-get-response-details',
     function (event, status, newURL, originalURL, httpResponseCode, requestMethod, referrer, headers, resourceType) {
-        // console.log('\n');
         /**
          event Event
          status Boolean
@@ -44,6 +44,7 @@ nightmare.on('did-get-response-details',
          resourceType String
          */
         console.log(resourceType, headers['content-type'], headers['content-length'], originalURL);
+
         var item = {
             resourceType: resourceType,
             headers: headers,
@@ -52,54 +53,7 @@ nightmare.on('did-get-response-details',
             originalURL: originalURL
         };
 
-        if (!item.contentType) {
-            if (isReportType(item)) {
-                reportArr.push(item);
-            } else {
-                unkownArr.push(item);
-            }
-        } else {
-            switch (item.contentType) {
-                case 'image/jpeg':
-                    imgJpegArr.push(item);
-                    break;
-
-                case 'image/png':
-                    imgPngArr.push(item);
-                    break;
-
-                case 'image/webp':
-                    imgWebpArr.push(item);
-                    break;
-
-                // js文件
-                case 'application/x-javascript':
-                    jsArr.push(item);
-                    break;
-
-                // html
-                case 'text/html; charset=utf-8':
-                    htmlArr.push(item);
-                    break;
-
-                default:
-                    if (item.resourceType === 'xhr') {
-                        xhrArr.push(item);
-                    } else if (isReportType(item)) {
-                        reportArr.push(item);
-                    } else {
-                        otherTypeArr.push(item);
-                    }
-
-                    break;
-            }
-        }
-
-        // 检查下是否已经加载完成，如果不认为控制的话，可以在 did-finish-load 事件中设置
-        if (checkIfLoaded(item)) {
-            console.log('000000000000000 isLoaded');
-            checkData.isLoaded = true;
-        }
+        dealResponseDetail(item);
     });
 
 // mainFrame本身（即html文件）加载完成即触发，在did-frame-finish-load之前
@@ -119,6 +73,102 @@ nightmare.on('did-finish-load', function () {
 
     // 资源加载完成之后再进行校验
 });
+
+// 页面停止加载时触发，只触发一次，在 did-finish-load 之后
+nightmare.on('did-stop-loading', function () {
+    console.log('[did-stop-loading]');
+});
+
+// 重定向时触发，例如可以构造一个404才测试
+nightmare.on('did-get-redirect-request',
+    function (event, oldURL, newURL, isMainFrame, httpResponseCode, requestMethod, referrer, headers) {
+        console.log('[did-get-redirect-request]', oldURL, newURL, isMainFrame);
+    });
+
+// mp4播放
+nightmare.on('media-started-playing', function () {
+    console.log('[media-started-playing]');
+});
+
+// new-window
+nightmare
+    .goto('https://now.qq.com/index.html')
+    .wait('#root')
+    .wait(function (checkData) {
+        return checkData.isLoaded;
+    }, loadData)
+    .end()
+    .then(function (result) {
+        console.log(result);
+
+        // 打印加载情况
+        printResponseDetail(loadData);
+    })
+    .catch(function (error) {
+        console.error('failed:', error);
+    });
+
+function dealResponseDetail(item) {
+    if (!item.contentType) {
+        if (isReportType(item)) {
+            loadData.reportArr.push(item);
+        } else {
+            loadData.unkownArr.push(item);
+        }
+    } else {
+        switch (item.contentType) {
+            case 'image/jpeg':
+                loadData.imgJpegArr.push(item);
+                break;
+
+            case 'image/png':
+                loadData.imgPngArr.push(item);
+                break;
+
+            case 'image/webp':
+                loadData.imgWebpArr.push(item);
+                break;
+
+            // js文件
+            case 'application/x-javascript':
+                loadData.jsArr.push(item);
+                break;
+
+            // html
+            case 'text/html; charset=utf-8':
+                loadData.htmlArr.push(item);
+                break;
+
+            default:
+                if (item.resourceType === 'xhr') {
+                    loadData.xhrArr.push(item);
+                } else if (isReportType(item)) {
+                    loadData.reportArr.push(item);
+                } else {
+                    loadData.otherTypeArr.push(item);
+                }
+
+                break;
+        }
+    }
+
+    // 检查下是否已经加载完成，如果不人为控制的话，可以在 did-finish-load 事件中设置
+    if (checkIfLoaded(item)) {
+        loadData.isLoaded = true;
+    }
+}
+
+function printResponseDetail(loadData) {
+    showInfo(loadData.htmlArr, 'html');
+    showInfo(loadData.jsArr, 'js');
+    showInfo(loadData.imgJpegArr, 'jpg');
+    showInfo(loadData.imgPngArr, 'png');
+    showInfo(loadData.imgWebpArr, 'webp');
+    showInfo(loadData.xhrArr, 'xhr');
+    showInfo(loadData.reportArr, 'report');
+    showInfo(loadData.otherTypeArr, 'other');
+    showInfo(loadData.unkownArr, 'unknown');
+}
 
 function isReportType(item) {
     return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\//i);
@@ -143,45 +193,3 @@ function showInfo(arr, tag) {
         console.log(item.originalURL, item.contentLength, (item.contentLength / 1024).toFixed(2) + 'kb');
     });
 }
-
-// 页面停止加载时触发，只触发一次，在 did-finish-load 之后
-nightmare.on('did-stop-loading', function () {
-    console.log('[did-stop-loading]');
-});
-
-// 重定向时触发，例如可以构造一个404才测试
-nightmare.on('did-get-redirect-request',
-    function (event, oldURL, newURL, isMainFrame, httpResponseCode, requestMethod, referrer, headers) {
-        console.log('[did-get-redirect-request]', oldURL, newURL, isMainFrame);
-    });
-
-// mp4播放
-nightmare.on('media-started-playing', function () {
-    console.log('[media-started-playing]');
-});
-
-// new-window
-
-nightmare
-    .goto('https://now.qq.com/index.html')
-    .wait('#root')
-    .wait(function (checkData) {
-        return checkData.isLoaded;
-    }, checkData)
-    .end()
-    .then(function (result) {
-        console.log(result);
-
-        showInfo(htmlArr, 'html');
-        showInfo(jsArr, 'js');
-        showInfo(imgJpegArr, 'jpg');
-        showInfo(imgPngArr, 'png');
-        showInfo(imgWebpArr, 'webp');
-        showInfo(xhrArr, 'xhr');
-        showInfo(reportArr, 'report');
-        showInfo(otherTypeArr, 'other');
-        showInfo(unkownArr, 'unknown');
-    })
-    .catch(function (error) {
-        console.error('failed:', error);
-    });

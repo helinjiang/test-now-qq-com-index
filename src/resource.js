@@ -82,6 +82,7 @@ nightmare
     .then(function () {
         // 打印加载情况
         handleResponse.toString();
+        console.log(handleResponse.getCheckReportQuality());
     })
     .catch(function (error) {
         console.error('failed:', error);

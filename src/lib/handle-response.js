@@ -1,3 +1,6 @@
+const ivReportChecker = require('@tencent/iv-report-checker');
+const util = require('./util');
+
 class HandleResponse {
     constructor(name) {
         this.name = name;
@@ -66,6 +69,42 @@ class HandleResponse {
 
     setIsLoaded() {
         this.isLoaded = true;
+    }
+
+    getCheckReportQuality() {
+        // TODO 此处可能会有多次请求
+        var urlStr;
+        for (var i = 0; i < this.reportArr.length; i++) {
+            if (this.reportArr[i].originalURL.match(/table_id=now_page_quality_statistics/i)) {
+                urlStr = this.reportArr[i].originalURL;
+                break;
+            }
+        }
+
+        if (!urlStr) {
+            return null;
+        }
+
+        var params = util.getUrlQuery(urlStr);
+
+        var checkResult = ivReportChecker.tdbank.getCheckQualityResult(params);
+        if (checkResult.retCode !== 0) {
+            return null;
+        }
+
+        var arr = [];
+
+        checkResult.result.forEach((checkMap) => {
+            let fieldList = Object.keys(checkMap);
+            fieldList.forEach((field) => {
+                let item = checkMap[field];
+                if (!item.isValid) {
+                    arr.push(`【${this.name}】【${checkMap.busi_name.value}】【${checkMap.action.value}】字段${item.field}校验失败（上报值为：${item.value}），失败原因： ${item.description}`);
+                }
+            });
+        });
+
+        return arr;
     }
 
     toString() {

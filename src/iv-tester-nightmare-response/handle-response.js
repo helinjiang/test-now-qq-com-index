@@ -1,6 +1,6 @@
 const ivReportChecker = require('@tencent/iv-report-checker');
-const util = require('./util');
 const RES_TYPE = require('./res-type');
+
 const getCheckTdbankQualityResult = require('./type/tdbank-quality');
 const getCheckTdbankNowH5Result = require('./type/tdbank-now-h5');
 
@@ -79,7 +79,19 @@ class HandleResponse {
     }
 
     toString() {
-        this._printOne(this.allList, 'ALL');
+        var map = {};
+        this.allList.forEach((item) => {
+            var list = map[item.type] || [];
+
+            list.push(item);
+
+            map[item.type] = list;
+        });
+
+        let fieldList = Object.keys(map);
+        fieldList.forEach((field) => {
+            this._printOne(map[field], field);
+        });
     }
 
     _printOne(arr, tag) {

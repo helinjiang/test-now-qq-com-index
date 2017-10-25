@@ -68,7 +68,7 @@ class HandleResponse {
         this.isLoaded = true;
     }
 
-    print() {
+    toString() {
         this._printOne(this.htmlArr, 'html');
         this._printOne(this.jsArr, 'js');
         this._printOne(this.imgJpegArr, 'jpg');
@@ -92,7 +92,7 @@ class HandleResponse {
         });
 
         arr.forEach(function (item) {
-            item.print();
+            item.toString();
         });
     }
 

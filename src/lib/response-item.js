@@ -18,7 +18,7 @@ class ResponseItem {
         this.contentLength = parseInt(this.headers['content-length'] || 0);
     }
 
-    print() {
+    toString() {
         console.log(this.originalURL, this.contentLength, (this.contentLength / 1024).toFixed(2) + 'kb');
     }
 }

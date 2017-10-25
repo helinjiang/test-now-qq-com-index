@@ -81,7 +81,7 @@ nightmare
     .end()
     .then(function () {
         // 打印加载情况
-        handleResponse.print();
+        handleResponse.toString();
     })
     .catch(function (error) {
         console.error('failed:', error);

@@ -82,8 +82,8 @@ nightmare
     .then(function () {
         // 打印加载情况
         handleResponse.toString();
-        console.log(handleResponse.getCheckReportQuality());
-        console.log(handleResponse.getCheckReportNowH5());
+        // console.log(handleResponse.getCheckReportQuality());
+        // console.log(handleResponse.getCheckReportNowH5());
     })
     .catch(function (error) {
         console.error('failed:', error);

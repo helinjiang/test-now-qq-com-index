@@ -16,10 +16,11 @@ class ResponseItem {
     init() {
         this.contentType = this.headers['content-type'] && this.headers['content-type'][0] || '';
         this.contentLength = parseInt(this.headers['content-length'] || 0);
+        this.type = 'OTHER';
     }
 
     toString() {
-        console.log(this.originalURL, this.contentLength, (this.contentLength / 1024).toFixed(2) + 'kb');
+        console.log(this.type, this.originalURL, this.contentLength, (this.contentLength / 1024).toFixed(2) + 'kb');
     }
 }
 

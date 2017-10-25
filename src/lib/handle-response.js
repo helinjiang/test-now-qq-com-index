@@ -1,74 +1,84 @@
 const ivReportChecker = require('@tencent/iv-report-checker');
 const util = require('./util');
 
+const RES_TYPE = {
+    JPEG: 'JPEG',
+    PNG: 'PNG',
+    WEBP: 'WEBP',
+    JS: 'JS',
+    HTML: 'HTML',
+    XHR: 'XHR',
+    BADJS: 'BADJS',
+    MONITOR: 'MONITOR',
+    REPORT_QUALITY: 'REPORT_QUALITY',
+    REPORT_NOW_H5: 'REPORT_NOW_H5',
+    OTHER: 'OTHER'
+};
+
 class HandleResponse {
     constructor(name) {
         this.name = name;
 
         this.isLoaded = false;
-        this.unkownArr = [];
-        this.imgJpegArr = [];
-        this.imgPngArr = [];
-        this.imgWebpArr = [];
-        this.jsArr = [];
-        this.htmlArr = [];
-        this.xhrArr = [];
-        this.reportArr = [];
-        this.otherTypeArr = [];
+        this.allList = [];
     }
 
     add(item) {
-        if (!item.contentType) {
-            if (this._isReportType(item)) {
-                this.reportArr.push(item);
-            } else {
-                this.unkownArr.push(item);
-            }
+        var originalURL = item.originalURL;
+
+        // 分门别类进行识别
+        if (ivReportChecker.monitor.isReportToMonitor(originalURL)) {
+            item.type = RES_TYPE.MONITOR;
+        } else if (ivReportChecker.tdbank.isReportToNowH5(originalURL)) {
+            item.type = RES_TYPE.REPORT_NOW_H5;
+        } else if (ivReportChecker.tdbank.isReportToQuality(originalURL)) {
+            item.type = RES_TYPE.REPORT_QUALITY;
+        } else if (ivReportChecker.badjs.isReportToBadjs(originalURL)) {
+            item.type = RES_TYPE.BADJS;
+        } else if (!item.contentType) {
+            item.type = RES_TYPE.OTHER;
         } else {
             switch (item.contentType) {
                 case 'image/jpeg':
-                    this.imgJpegArr.push(item);
+                    item.type = RES_TYPE.JPEG;
                     break;
 
                 case 'image/png':
-                    this.imgPngArr.push(item);
+                    item.type = RES_TYPE.PNG;
                     break;
 
                 case 'image/webp':
-                    this.imgWebpArr.push(item);
+                    item.type = RES_TYPE.WEBP;
                     break;
 
                 // js文件
                 case 'application/x-javascript':
-                    this.jsArr.push(item);
+                    item.type = RES_TYPE.JS;
                     break;
 
                 // html
                 case 'text/html; charset=utf-8':
-                    this.htmlArr.push(item);
+                    item.type = RES_TYPE.HTML;
                     break;
 
                 default:
                     if (item.resourceType === 'xhr') {
-                        this.xhrArr.push(item);
-                    } else if (this._isReportType(item)) {
-                        this.reportArr.push(item);
+                        item.type = RES_TYPE.XHR;
                     } else {
-                        this.otherTypeArr.push(item);
+                        item.type = RES_TYPE.OTHER;
                     }
 
                     break;
             }
         }
 
+        // 缓存数据
+        this.allList.push(item);
+
         // 检查下是否已经加载完成，如果不人为控制的话，可以在 did-finish-load 事件中设置
         if (this._checkIfLoaded(item)) {
             this.isLoaded = true;
         }
-    }
-
-    setIsLoaded() {
-        this.isLoaded = true;
     }
 
     getCheckReportNowH5() {
@@ -158,15 +168,16 @@ class HandleResponse {
     }
 
     toString() {
-        this._printOne(this.htmlArr, 'html');
-        this._printOne(this.jsArr, 'js');
-        this._printOne(this.imgJpegArr, 'jpg');
-        this._printOne(this.imgPngArr, 'png');
-        this._printOne(this.imgWebpArr, 'webp');
-        this._printOne(this.xhrArr, 'xhr');
-        this._printOne(this.reportArr, 'report');
-        this._printOne(this.otherTypeArr, 'other');
-        this._printOne(this.unkownArr, 'unknown');
+        this._printOne(this.allList, 'ALL');
+        // this._printOne(this.htmlArr, 'html');
+        // this._printOne(this.jsArr, 'js');
+        // this._printOne(this.imgJpegArr, 'jpg');
+        // this._printOne(this.imgPngArr, 'png');
+        // this._printOne(this.imgWebpArr, 'webp');
+        // this._printOne(this.xhrArr, 'xhr');
+        // this._printOne(this.reportArr, 'report');
+        // this._printOne(this.otherTypeArr, 'other');
+        // this._printOne(this.unkownArr, 'unknown');
     }
 
     _printOne(arr, tag) {
@@ -183,10 +194,6 @@ class HandleResponse {
         arr.forEach(function (item) {
             item.toString();
         });
-    }
-
-    _isReportType(item) {
-        return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\//i);
     }
 
     _checkIfLoaded(item) {

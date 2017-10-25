@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/helinjiang/test-now-qq-com-index#readme",
   "devDependencies": {
+    "@tencent/iv-report-checker": "^5.89.0",
     "babel-core": "^6.26.0",
     "babel-preset-es2015-loose": "^8.0.0",
     "babel-preset-stage-0": "^6.24.1",

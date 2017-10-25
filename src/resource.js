@@ -79,9 +79,7 @@ nightmare
         return handleResponse.isLoaded;
     }, handleResponse)
     .end()
-    .then(function (result) {
-        console.log(result);
-
+    .then(function () {
         // 打印加载情况
         handleResponse.print();
     })

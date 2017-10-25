@@ -1,20 +1,11 @@
 const Nightmare = require('nightmare');
-
-var nightmare = Nightmare({ show: false });
+const HandleResponse = require('./lib/handle-response');
+const ResponseItem = require('./lib/response-item');
 
 // 所有加载的数据
-var loadData = {
-    isLoaded: false,
-    unkownArr: [],
-    imgJpegArr: [],
-    imgPngArr: [],
-    imgWebpArr: [],
-    jsArr: [],
-    htmlArr: [],
-    xhrArr: [],
-    reportArr: [],
-    otherTypeArr: []
-};
+var handleResponse = new HandleResponse('NOW官网PC首页资源加载');
+
+var nightmare = Nightmare({ show: false });
 
 nightmare.on('console', function (type, msg) {
     console[type](msg);
@@ -45,15 +36,7 @@ nightmare.on('did-get-response-details',
          */
         console.log(resourceType, headers['content-type'], headers['content-length'], originalURL);
 
-        var item = {
-            resourceType: resourceType,
-            headers: headers,
-            contentType: headers['content-type'] && headers['content-type'][0] || '',
-            contentLength: parseInt(headers['content-length'] || 0),
-            originalURL: originalURL
-        };
-
-        dealResponseDetail(item);
+        handleResponse.add(new ResponseItem(event, status, newURL, originalURL, httpResponseCode, requestMethod, referrer, headers, resourceType));
     });
 
 // mainFrame本身（即html文件）加载完成即触发，在did-frame-finish-load之前
@@ -70,8 +53,6 @@ nightmare.on('did-frame-finish-load', function (event, isMainFrame) {
 // 页面加载完成时触发，相当于 onload，只触发一次
 nightmare.on('did-finish-load', function () {
     console.log('[did-finish-load]');
-
-    // 资源加载完成之后再进行校验
 });
 
 // 页面停止加载时触发，只触发一次，在 did-finish-load 之后
@@ -94,102 +75,16 @@ nightmare.on('media-started-playing', function () {
 nightmare
     .goto('https://now.qq.com/index.html')
     .wait('#root')
-    .wait(function (checkData) {
-        return checkData.isLoaded;
-    }, loadData)
+    .wait(function (handleResponse) {
+        return handleResponse.isLoaded;
+    }, handleResponse)
     .end()
     .then(function (result) {
         console.log(result);
 
         // 打印加载情况
-        printResponseDetail(loadData);
+        handleResponse.print();
     })
     .catch(function (error) {
         console.error('failed:', error);
     });
-
-function dealResponseDetail(item) {
-    if (!item.contentType) {
-        if (isReportType(item)) {
-            loadData.reportArr.push(item);
-        } else {
-            loadData.unkownArr.push(item);
-        }
-    } else {
-        switch (item.contentType) {
-            case 'image/jpeg':
-                loadData.imgJpegArr.push(item);
-                break;
-
-            case 'image/png':
-                loadData.imgPngArr.push(item);
-                break;
-
-            case 'image/webp':
-                loadData.imgWebpArr.push(item);
-                break;
-
-            // js文件
-            case 'application/x-javascript':
-                loadData.jsArr.push(item);
-                break;
-
-            // html
-            case 'text/html; charset=utf-8':
-                loadData.htmlArr.push(item);
-                break;
-
-            default:
-                if (item.resourceType === 'xhr') {
-                    loadData.xhrArr.push(item);
-                } else if (isReportType(item)) {
-                    loadData.reportArr.push(item);
-                } else {
-                    loadData.otherTypeArr.push(item);
-                }
-
-                break;
-        }
-    }
-
-    // 检查下是否已经加载完成，如果不人为控制的话，可以在 did-finish-load 事件中设置
-    if (checkIfLoaded(item)) {
-        loadData.isLoaded = true;
-    }
-}
-
-function printResponseDetail(loadData) {
-    showInfo(loadData.htmlArr, 'html');
-    showInfo(loadData.jsArr, 'js');
-    showInfo(loadData.imgJpegArr, 'jpg');
-    showInfo(loadData.imgPngArr, 'png');
-    showInfo(loadData.imgWebpArr, 'webp');
-    showInfo(loadData.xhrArr, 'xhr');
-    showInfo(loadData.reportArr, 'report');
-    showInfo(loadData.otherTypeArr, 'other');
-    showInfo(loadData.unkownArr, 'unknown');
-}
-
-function isReportType(item) {
-    return !!item.originalURL.match(/now\.qq\.com\/badjs\/|report\.url\.cn\//i);
-}
-
-function checkIfLoaded(item) {
-    return !!item.originalURL.match(/table_id=personal_live_base/i);
-}
-
-function showInfo(arr, tag) {
-    if (!arr || !arr.length) {
-        return;
-    }
-
-    console.log('\n====' + tag + '====', arr.length);
-
-    arr.sort(function (a, b) {
-        return b.contentLength - a.contentLength;
-    });
-
-    arr.forEach(function (item) {
-        console.log(item.originalURL, item.contentLength, (item.contentLength / 1024).toFixed(2) + 'kb');
-    });
-}
